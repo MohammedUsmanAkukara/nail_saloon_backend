@@ -19,6 +19,7 @@ import enquiriesRoutes from './routes/enquiriesRoutes.js';
 import settingsRoutes from './routes/settingsRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
 
+import { connectDB } from './config/db.js';
 import { notFound, errorHandler } from './middleware/errorHandler.js';
 
 const app = express();
@@ -55,13 +56,23 @@ app.use(cookieParser(process.env.COOKIE_SECRET || 'sobo_cookie_secret_key_88319'
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Rate limit for authentication
-const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 100, // 100 attempts per 15 min window
-  message: { success: false, message: 'Too many login attempts. Please try again later.' },
+// Root welcome endpoint
+app.get('/', (req, res) => {
+  res.json({
+    success: true,
+    service: 'Nail Salon & Spa API',
+    status: 'online',
+    environment: process.env.NODE_ENV || 'development',
+    endpoints: {
+      health: '/api/health',
+      services: '/api/services',
+      locations: '/api/locations',
+      staff: '/api/staff',
+      appointments: '/api/appointments',
+      auth: '/api/auth',
+    },
+  });
 });
-app.use('/api/auth/login', authLimiter);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
@@ -72,6 +83,24 @@ app.get('/api/health', (req, res) => {
     environment: process.env.NODE_ENV || 'development',
   });
 });
+
+// Ensure database connection before servicing API routes (essential for serverless/Vercel)
+app.use(async (req, res, next) => {
+  try {
+    await connectDB();
+    next();
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Rate limit for authentication
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100, // 100 attempts per 15 min window
+  message: { success: false, message: 'Too many login attempts. Please try again later.' },
+});
+app.use('/api/auth/login', authLimiter);
 
 // API Routes
 app.use('/api/auth', authRoutes);
