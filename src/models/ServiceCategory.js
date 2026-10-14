@@ -1,0 +1,40 @@
+import mongoose from 'mongoose';
+
+const serviceCategorySchema = new mongoose.Schema(
+  {
+    name: {
+      type: String,
+      required: true,
+      unique: true,
+      trim: true,
+    },
+    slug: {
+      type: String,
+      required: true,
+      unique: true,
+      lowercase: true,
+      trim: true,
+    },
+    description: {
+      type: String,
+      default: '',
+    },
+    image: {
+      type: String,
+      default: '',
+    },
+    sortOrder: {
+      type: Number,
+      default: 0,
+    },
+    active: {
+      type: Boolean,
+      default: true,
+    },
+  },
+  {
+    timestamps: true,
+  }
+);
+
+export default mongoose.model('ServiceCategory', serviceCategorySchema);
